@@ -45,10 +45,10 @@ streamlit run streamlit_app.py
 If deploying on Streamlit Community Cloud, keep these files at repo root:
 
 - `streamlit_app.py`
-- `requirements.txt` (this repo now includes one that points to `backend/requirements.txt`)
+- `requirements.txt` (Streamlit-specific dependencies only)
 - `runtime.txt` (pins Python version)
 
-This is required so non-Streamlit dependencies (like `pydantic`, `openai`, `python-docx`, `reportlab`) are installed before app startup.
+This is required so non-Streamlit dependencies (like `pydantic`, `openai`, `python-docx`, `reportlab`) are installed before app startup, without pulling full backend server packages that can fail on cloud builders.
 
 ## Docker (Optional)
 
