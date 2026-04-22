@@ -1,83 +1,68 @@
-# Procurement AI Suite
+# Procurement AI Suite (Streamlit Edition)
 
-Production-oriented web application for bilingual legal translation and procurement document review.
+A production-oriented procurement/legal AI app with a simplified Streamlit interface.
 
-## Architecture
+## What it does
 
-- **Frontend**: React + Tailwind + react-dropzone
-- **Backend**: FastAPI + python-docx + reportlab + OpenAI API
-- **Pipeline**:
-  1. Upload `.docx` files
-  2. Parse paragraphs and table cells
-  3. Chunk text with glossary memory
-  4. Translate to formal legal English (optional)
-  5. Generate bilingual outputs (`.docx` + `.pdf`)
-  6. Run procurement review analysis (optional)
-  7. Return downloadable artifacts
+- Upload multiple `.docx` legal/procurement files
+- Choose mode:
+  - `Translation Only`
+  - `Review Only`
+  - `Translate + Review`
+- Generate bilingual outputs (`.docx` + `.pdf`) in two-column layout
+- Generate structured procurement/legal review report (`.md`)
+- Download all generated outputs directly from the UI
 
-## Core Modes
-
-- `translation_only`
-- `review_only`
-- `combined` (translate + review original and translated versions)
-
-## Backend Setup
-
-```bash
-cd backend
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp ../.env.example .env
-uvicorn app.main:app --reload
-```
-
-API available at `http://localhost:8000`.
-
-## Frontend Setup
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Frontend available at `http://localhost:5173`.
-
-## Docker Deployment
+## 1-Minute Quick Start (Easiest)
 
 ```bash
 cp .env.example .env
-# set OPENAI_API_KEY in .env
+# edit .env and set OPENAI_API_KEY
+./run_streamlit.sh
+```
+
+Then open `http://localhost:8501`.
+
+---
+
+## Manual Local Run
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+cp .env.example .env
+# edit .env and set OPENAI_API_KEY
+set -a; source .env; set +a
+streamlit run streamlit_app.py
+```
+
+---
+
+## Docker (Optional)
+
+The previous React + FastAPI docker-compose setup remains in this repo if needed.
+
+```bash
+cp .env.example .env
 docker compose up --build
 ```
 
-## Production Deployment Guide
+- FastAPI: `http://localhost:8000`
+- React UI: `http://localhost:5173`
 
-1. Deploy backend as a container service (AWS ECS/Fargate, GCP Cloud Run, Azure Container Apps).
-2. Use object storage (S3/GCS/Blob) for artifacts instead of local filesystem.
-3. Replace in-memory job store with Redis + Postgres for persistence and horizontal scale.
-4. Add background queue (Celery/RQ/Arq) for long-running document jobs.
-5. Configure API gateway + WAF + rate limiting + auth (OIDC/JWT).
-6. Add observability (OpenTelemetry, structured logs, alerting).
-7. Enforce encrypted secrets management (Vault/SM/KMS).
+---
 
-## Throttling / Reliability Controls
+## Reliability / Anti-throttle controls
 
-- Exponential backoff retries on OpenAI calls (`tenacity`, up to 5 attempts)
-- Configurable chunk size (`MAX_CHUNK_CHARS`) to reduce context overload
-- Low temperature + JSON-constrained translation format for consistency
-- Per-file progress and failure isolation in batch jobs
+- Chunked translation for long docs
+- Exponential backoff retries for OpenAI calls
+- Low temperature for legal consistency
+- Term memory dictionary carried across chunks
 
-## Legal Formatting Notes
+---
 
-- Translation preserves segment order and numbering text as parsed.
-- Output is rendered in a two-column legal layout (Original / English).
-- Supports paragraph and table-cell extraction from `.docx`.
+## Notes
 
-## Roadmap
-
-- Term memory persistence per organization
-- User auth, workspace history, and billing
-- Version comparison/redline and audit trails
-- Multi-language expansion
+- Best for legal/procurement `.docx` documents with clauses, numbering, and tables.
+- If `OPENAI_API_KEY` is missing, the app will still load but processing will fail until configured.
