@@ -39,6 +39,17 @@ streamlit run streamlit_app.py
 
 ---
 
+
+## Streamlit Community Cloud Deployment
+
+If deploying on Streamlit Community Cloud, keep these files at repo root:
+
+- `streamlit_app.py`
+- `requirements.txt` (this repo now includes one that points to `backend/requirements.txt`)
+- `runtime.txt` (pins Python version)
+
+This is required so non-Streamlit dependencies (like `pydantic`, `openai`, `python-docx`, `reportlab`) are installed before app startup.
+
 ## Docker (Optional)
 
 The previous React + FastAPI docker-compose setup remains in this repo if needed.
