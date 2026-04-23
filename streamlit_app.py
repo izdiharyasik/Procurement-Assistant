@@ -27,7 +27,7 @@ if "MAX_CHUNK_CHARS" in st.secrets and st.secrets["MAX_CHUNK_CHARS"]:
     os.environ["MAX_CHUNK_CHARS"] = str(st.secrets["MAX_CHUNK_CHARS"])
 
 from app.models.schemas import ProcessingMode  # noqa: E402
-from app.services.ai_service import ai_service  # noqa: E402
+from app.services.ai_service import AIService  # noqa: E402
 from app.services.document_service import (  # noqa: E402
     build_bilingual_docx,
     build_bilingual_pdf,
@@ -40,17 +40,38 @@ st.set_page_config(page_title="Procurement AI Suite", page_icon="⚖️", layout
 st.title("🎯 Procurement AI Suite")
 st.caption("Bilingual legal translator + procurement document reviewer")
 
-provider = os.getenv("AI_PROVIDER", "openai").lower()
-api_ready = provider == "ollama" or bool(os.getenv("OPENAI_API_KEY") or getattr(ai_service, "client", None))
+st.sidebar.header("AI Configuration")
+provider = st.sidebar.radio(
+    "Provider",
+    options=["openai", "ollama"],
+    index=0 if os.getenv("AI_PROVIDER", "openai").lower() == "openai" else 1,
+    horizontal=True,
+)
+os.environ["AI_PROVIDER"] = provider
 
-if provider == "ollama":
+if provider == "openai":
+    openai_key = st.sidebar.text_input(
+        "OpenAI API Key",
+        value=os.getenv("OPENAI_API_KEY", ""),
+        type="password",
+        help="Required for Streamlit Cloud unless set in Secrets.",
+    )
+    openai_model = st.sidebar.text_input("OpenAI Model", value=os.getenv("OPENAI_MODEL", "gpt-4.1-mini"))
+    os.environ["OPENAI_API_KEY"] = openai_key.strip()
+    os.environ["OPENAI_MODEL"] = openai_model.strip() or "gpt-4.1-mini"
+else:
+    ollama_url = st.sidebar.text_input("Ollama Base URL", value=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"))
+    ollama_model = st.sidebar.text_input("Ollama Model", value=os.getenv("OLLAMA_MODEL", "gemma3:latest"))
+    os.environ["OLLAMA_BASE_URL"] = ollama_url.strip() or "http://localhost:11434"
+    os.environ["OLLAMA_MODEL"] = ollama_model.strip() or "gemma3:latest"
     st.info("Using local Ollama provider (no OpenAI API key required).")
 
+ai_service = AIService()
+api_ready = provider == "ollama" or bool(os.getenv("OPENAI_API_KEY") or getattr(ai_service, "client", None))
+
 if not api_ready:
-    st.error(
-        "OPENAI_API_KEY is not configured. Set OPENAI_API_KEY or switch AI_PROVIDER=ollama."
-    )
-    st.code('AI_PROVIDER = "ollama"\nOLLAMA_BASE_URL = "http://localhost:11434"\nOLLAMA_MODEL = "llama3.1:8b"', language="toml")
+    st.error("OPENAI_API_KEY is not configured. Add it in the sidebar or Streamlit Secrets.")
+    st.code('AI_PROVIDER = "openai"\nOPENAI_API_KEY = "sk-..."\nOPENAI_MODEL = "gpt-4.1-mini"', language="toml")
 
 mode_map = {
     "Translation Only": ProcessingMode.translation_only,
