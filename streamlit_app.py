@@ -50,7 +50,7 @@ if not api_ready:
     st.error(
         "OPENAI_API_KEY is not configured. Set OPENAI_API_KEY or switch AI_PROVIDER=ollama."
     )
-    st.code('AI_PROVIDER = "ollama"\nOLLAMA_BASE_URL = "http://localhost:11434"\nOLLAMA_MODEL = "llama3.1:8b"', language="toml")
+    st.code('AI_PROVIDER = "ollama"\nOLLAMA_BASE_URL = "http://localhost:11434"\nOLLAMA_MODEL = "gemma3:latest"', language="toml")
 
 mode_map = {
     "Translation Only": ProcessingMode.translation_only,
