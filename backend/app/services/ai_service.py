@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from typing import Iterable
 
+import httpx
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 
@@ -26,22 +27,45 @@ Be direct, specific, and practical."""
 
 class AIService:
     def __init__(self) -> None:
-        self.client = OpenAI(api_key=settings.openai_api_key) if settings.openai_api_key else None
+        self.provider = settings.ai_provider.lower()
+        self.client = (
+            OpenAI(api_key=settings.openai_api_key)
+            if self.provider == "openai" and settings.openai_api_key
+            else None
+        )
 
     @retry(wait=wait_exponential(min=1, max=20), stop=stop_after_attempt(5))
     def _chat(self, system: str, user: str) -> str:
-        if not self.client:
-            raise RuntimeError("OPENAI_API_KEY is not set")
+        if self.provider == "openai":
+            if not self.client:
+                raise RuntimeError("OPENAI_API_KEY is not set. Set AI_PROVIDER=ollama for local free inference.")
 
-        response = self.client.chat.completions.create(
-            model=settings.openai_model,
-            temperature=0.1,
-            messages=[
-                {"role": "system", "content": system},
-                {"role": "user", "content": user},
-            ],
-        )
-        return response.choices[0].message.content or ""
+            response = self.client.chat.completions.create(
+                model=settings.openai_model,
+                temperature=0.1,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+            )
+            return response.choices[0].message.content or ""
+
+        if self.provider == "ollama":
+            payload = {
+                "model": settings.ollama_model,
+                "stream": False,
+                "messages": [
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": user},
+                ],
+            }
+            with httpx.Client(timeout=120) as client:
+                response = client.post(f"{settings.ollama_base_url}/api/chat", json=payload)
+                response.raise_for_status()
+                data = response.json()
+                return data.get("message", {}).get("content", "")
+
+        raise RuntimeError("Unsupported AI_PROVIDER. Use 'openai' or 'ollama'.")
 
     def translate_chunk(self, segments: Iterable[Segment], term_memory: dict[str, str]) -> dict[int, str]:
         payload = {
@@ -56,6 +80,11 @@ class AIService:
             for item in parsed.get("translations", [])
             if str(item.get("id", "")).isdigit()
         }
+
+        if not translations and self.provider == "ollama":
+            # fallback when model fails to produce strict JSON
+            translations = {s.index: s.original for s in segments}
+
         term_memory.update(parsed.get("term_memory_updates", {}))
         return translations
 

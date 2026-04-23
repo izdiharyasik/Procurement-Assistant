@@ -13,10 +13,16 @@ sys.path.insert(0, str(Path(__file__).parent / "backend"))
 os.environ.setdefault("PYTHONPATH", "backend")
 
 # Streamlit Cloud stores API keys in st.secrets, not .env files.
+if "AI_PROVIDER" in st.secrets and st.secrets["AI_PROVIDER"]:
+    os.environ["AI_PROVIDER"] = str(st.secrets["AI_PROVIDER"]).lower()
 if "OPENAI_API_KEY" in st.secrets and st.secrets["OPENAI_API_KEY"]:
     os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
 if "OPENAI_MODEL" in st.secrets and st.secrets["OPENAI_MODEL"]:
     os.environ["OPENAI_MODEL"] = st.secrets["OPENAI_MODEL"]
+if "OLLAMA_BASE_URL" in st.secrets and st.secrets["OLLAMA_BASE_URL"]:
+    os.environ["OLLAMA_BASE_URL"] = str(st.secrets["OLLAMA_BASE_URL"])
+if "OLLAMA_MODEL" in st.secrets and st.secrets["OLLAMA_MODEL"]:
+    os.environ["OLLAMA_MODEL"] = str(st.secrets["OLLAMA_MODEL"])
 if "MAX_CHUNK_CHARS" in st.secrets and st.secrets["MAX_CHUNK_CHARS"]:
     os.environ["MAX_CHUNK_CHARS"] = str(st.secrets["MAX_CHUNK_CHARS"])
 
@@ -34,12 +40,17 @@ st.set_page_config(page_title="Procurement AI Suite", page_icon="⚖️", layout
 st.title("🎯 Procurement AI Suite")
 st.caption("Bilingual legal translator + procurement document reviewer")
 
-api_key_present = bool(os.getenv("OPENAI_API_KEY") or getattr(ai_service, "client", None))
-if not api_key_present:
+provider = os.getenv("AI_PROVIDER", "openai").lower()
+api_ready = provider == "ollama" or bool(os.getenv("OPENAI_API_KEY") or getattr(ai_service, "client", None))
+
+if provider == "ollama":
+    st.info("Using local Ollama provider (no OpenAI API key required).")
+
+if not api_ready:
     st.error(
-        "OPENAI_API_KEY is not configured. On Streamlit Cloud, set it in App Settings → Secrets."
+        "OPENAI_API_KEY is not configured. Set OPENAI_API_KEY or switch AI_PROVIDER=ollama."
     )
-    st.code('OPENAI_API_KEY = "sk-..."', language="toml")
+    st.code('AI_PROVIDER = "ollama"\nOLLAMA_BASE_URL = "http://localhost:11434"\nOLLAMA_MODEL = "llama3.1:8b"', language="toml")
 
 mode_map = {
     "Translation Only": ProcessingMode.translation_only,
@@ -56,7 +67,7 @@ uploads = st.file_uploader(
     accept_multiple_files=True,
 )
 
-run = st.button("Start Processing", type="primary", disabled=not uploads or not api_key_present)
+run = st.button("Start Processing", type="primary", disabled=not uploads or not api_ready)
 
 if run and uploads:
     overall = st.progress(0, text="Preparing files...")

@@ -13,15 +13,37 @@ A production-oriented procurement/legal AI app with a simplified Streamlit inter
 - Generate structured procurement/legal review report (`.md`)
 - Download all generated outputs directly from the UI
 
-## 1-Minute Quick Start (Easiest)
+## AI Provider Options
+
+You can run this app in two ways:
+
+1. **OpenAI (paid API)**
+2. **Ollama (local, no API key cost)**
+
+Set this with `AI_PROVIDER` in `.env` or Streamlit secrets.
+
+## 1-Minute Quick Start (OpenAI)
 
 ```bash
 cp .env.example .env
-# edit .env and set OPENAI_API_KEY
+# edit .env and set AI_PROVIDER=openai + OPENAI_API_KEY
 ./run_streamlit.sh
 ```
 
 Then open `http://localhost:8501`.
+
+## 1-Minute Quick Start (No OpenAI key, using Ollama)
+
+```bash
+# install ollama first: https://ollama.com/download
+ollama pull llama3.1:8b
+cp .env.example .env
+# edit .env:
+# AI_PROVIDER=ollama
+# OLLAMA_BASE_URL=http://localhost:11434
+# OLLAMA_MODEL=llama3.1:8b
+./run_streamlit.sh
+```
 
 ---
 
@@ -32,13 +54,12 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -r backend/requirements.txt
 cp .env.example .env
-# edit .env and set OPENAI_API_KEY
+# set AI_PROVIDER and relevant keys/urls
 set -a; source .env; set +a
 streamlit run streamlit_app.py
 ```
 
 ---
-
 
 ## Streamlit Community Cloud Deployment
 
@@ -48,20 +69,25 @@ If deploying on Streamlit Community Cloud, keep these files at repo root:
 - `requirements.txt` (Streamlit-specific dependencies only)
 - `runtime.txt` (pins Python version)
 
-This is required so non-Streamlit dependencies (like `pydantic`, `openai`, `python-docx`, `reportlab`) are installed before app startup, without pulling full backend server packages that can fail on cloud builders.
-
-
 ### Streamlit Secrets (Cloud)
 
-In Streamlit Community Cloud, configure:
+OpenAI mode:
 
 ```toml
+AI_PROVIDER = "openai"
 OPENAI_API_KEY = "sk-..."
 OPENAI_MODEL = "gpt-4.1-mini"
 MAX_CHUNK_CHARS = 3200
 ```
 
-The app reads these from `st.secrets` and maps them to environment variables before initializing AI clients.
+Ollama mode (only works if Ollama endpoint is reachable from deployment environment):
+
+```toml
+AI_PROVIDER = "ollama"
+OLLAMA_BASE_URL = "http://localhost:11434"
+OLLAMA_MODEL = "llama3.1:8b"
+MAX_CHUNK_CHARS = 3200
+```
 
 ## Docker (Optional)
 
@@ -80,7 +106,7 @@ docker compose up --build
 ## Reliability / Anti-throttle controls
 
 - Chunked translation for long docs
-- Exponential backoff retries for OpenAI calls
+- Exponential backoff retries for AI calls
 - Low temperature for legal consistency
 - Term memory dictionary carried across chunks
 
@@ -89,4 +115,4 @@ docker compose up --build
 ## Notes
 
 - Best for legal/procurement `.docx` documents with clauses, numbering, and tables.
-- If `OPENAI_API_KEY` is missing, the app will still load but processing will fail until configured.
+- For completely free/local inference, use `AI_PROVIDER=ollama`.
