@@ -71,6 +71,9 @@ else:
 ai_service = AIService()
 api_ready = provider == "ollama" or bool(os.getenv("OPENAI_API_KEY") or getattr(ai_service, "client", None))
 
+ai_service = AIService()
+api_ready = provider == "ollama" or bool(os.getenv("OPENAI_API_KEY") or getattr(ai_service, "client", None))
+
 if not api_ready:
     st.error("OPENAI_API_KEY is not configured. Add it in the sidebar or Streamlit Secrets.")
     st.code('AI_PROVIDER = "openai"\nOPENAI_API_KEY = "sk-..."\nOPENAI_MODEL = "gpt-4.1-mini"', language="toml")

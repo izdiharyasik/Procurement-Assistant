@@ -34,7 +34,8 @@ Use one of these options:
 
 If you run locally on your own machine, Ollama works normally.
 
----
+1. Set provider to **OpenAI** and add your API key in the sidebar, or
+2. Configure Streamlit **Secrets** with `OPENAI_API_KEY`.
 
 ## Important: `.env` vs terminal variable syntax
 
