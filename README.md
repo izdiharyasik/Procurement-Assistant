@@ -2,15 +2,45 @@
 
 This repo now has one primary way to run the app locally: **Streamlit**.
 
-## Quick Start (3 steps)
+## Quick Start
+
+### Windows (Command Prompt)
+
+```bat
+copy .env.example .env
+REM edit .env for OpenAI or Ollama
+run_streamlit.bat
+```
+
+### macOS / Linux
 
 ```bash
 cp .env.example .env
-# edit .env for either OpenAI or Ollama
+# edit .env for OpenAI or Ollama
 ./run_streamlit.sh
 ```
 
 Open: `http://localhost:8501`
+
+---
+
+## Important: `.env` vs terminal variable syntax
+
+In **Windows Command Prompt**, this is invalid and will fail:
+
+```bat
+AI_PROVIDER=ollama
+```
+
+Use either:
+
+```bat
+set AI_PROVIDER=ollama
+set OLLAMA_BASE_URL=http://localhost:11434
+set OLLAMA_MODEL=gemma3:latest
+```
+
+Or (recommended) just put these in `.env` and run `run_streamlit.bat`.
 
 ---
 
@@ -43,16 +73,6 @@ ollama list
 Examples from existing installs:
 - `gemma3:latest`
 - `phi:latest`
-
----
-
-## What the app does
-
-- Upload `.docx` procurement/legal files
-- Run translation, review, or both
-- Generate bilingual `.docx`/`.pdf` outputs
-- Generate a structured markdown review report
-- Download results directly from the UI
 
 ---
 
