@@ -36,7 +36,8 @@ Use one of these options:
 
 If you run locally on your own machine, Ollama works normally.
 
----
+On Streamlit Cloud, `OLLAMA_BASE_URL=http://localhost:11434` will **not** reach your local PC.
+Use one of these options:
 
 ## Important: `.env` vs terminal variable syntax
 
