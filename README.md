@@ -26,19 +26,23 @@ OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4.1-mini
 ```
 
-### Option B: Ollama (local)
+### Option B: Ollama (local, use what you already installed)
 
 ```env
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.1:8b
+OLLAMA_MODEL=gemma3:latest
 ```
 
-If using Ollama:
+No new model download is required. Use any local model from:
 
 ```bash
-ollama pull llama3.1:8b
+ollama list
 ```
+
+Examples from existing installs:
+- `gemma3:latest`
+- `phi:latest`
 
 ---
 
