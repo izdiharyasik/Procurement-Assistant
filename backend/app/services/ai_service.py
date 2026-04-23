@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import json
+import os
 from typing import Iterable
 
 import httpx
 from openai import OpenAI
 from tenacity import retry, stop_after_attempt, wait_exponential
 
-from app.config import Settings
 from app.services.document_service import Segment
 
 TRANSLATION_SYSTEM_PROMPT = (
@@ -27,11 +27,15 @@ Be direct, specific, and practical."""
 
 class AIService:
     def __init__(self) -> None:
-        self.settings = Settings()
-        self.provider = self.settings.ai_provider.lower()
+        self.provider = os.getenv("AI_PROVIDER", "openai").lower()
+        self.openai_api_key = os.getenv("OPENAI_API_KEY", "")
+        self.openai_model = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
+        self.ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+        self.ollama_model = os.getenv("OLLAMA_MODEL", "gemma3:latest")
+
         self.client = (
-            OpenAI(api_key=self.settings.openai_api_key)
-            if self.provider == "openai" and self.settings.openai_api_key
+            OpenAI(api_key=self.openai_api_key)
+            if self.provider == "openai" and self.openai_api_key
             else None
         )
 
@@ -42,7 +46,7 @@ class AIService:
                 raise RuntimeError("OPENAI_API_KEY is not set. Set AI_PROVIDER=ollama for local free inference.")
 
             response = self.client.chat.completions.create(
-                model=self.settings.openai_model,
+                model=self.openai_model,
                 temperature=0.1,
                 messages=[
                     {"role": "system", "content": system},
@@ -53,18 +57,24 @@ class AIService:
 
         if self.provider == "ollama":
             payload = {
-                "model": self.settings.ollama_model,
+                "model": self.ollama_model,
                 "stream": False,
                 "messages": [
                     {"role": "system", "content": system},
                     {"role": "user", "content": user},
                 ],
             }
-            with httpx.Client(timeout=120) as client:
-                response = client.post(f"{self.settings.ollama_base_url}/api/chat", json=payload)
-                response.raise_for_status()
-                data = response.json()
-                return data.get("message", {}).get("content", "")
+            try:
+                with httpx.Client(timeout=120) as client:
+                    response = client.post(f"{self.ollama_base_url}/api/chat", json=payload)
+                    response.raise_for_status()
+                    data = response.json()
+                    return data.get("message", {}).get("content", "")
+            except httpx.RequestError as exc:
+                raise RuntimeError(
+                    f"Cannot reach Ollama at {self.ollama_base_url}. "
+                    "If this app is on Streamlit Cloud, localhost Ollama is unavailable; use OpenAI instead."
+                ) from exc
 
         raise RuntimeError("Unsupported AI_PROVIDER. Use 'openai' or 'ollama'.")
 
@@ -110,5 +120,6 @@ def _extract_json(raw: str) -> dict:
         return json.loads(raw[start : end + 1])
     except json.JSONDecodeError:
         return {"translations": []}
+
 
 ai_service = AIService()

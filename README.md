@@ -34,13 +34,8 @@ Use one of these options:
 
 If you run locally on your own machine, Ollama works normally.
 
-Use either:
-
-```bat
-set AI_PROVIDER=ollama
-set OLLAMA_BASE_URL=http://localhost:11434
-set OLLAMA_MODEL=gemma3:latest
-```
+1. Set provider to **OpenAI** and add your API key in the sidebar, or
+2. Configure Streamlit **Secrets** with `OPENAI_API_KEY`.
 
 ## Important: `.env` vs terminal variable syntax
 

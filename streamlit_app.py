@@ -65,6 +65,11 @@ else:
     os.environ["OLLAMA_BASE_URL"] = ollama_url.strip() or "http://localhost:11434"
     os.environ["OLLAMA_MODEL"] = ollama_model.strip() or "gemma3:latest"
     st.info("Using local Ollama provider (no OpenAI API key required).")
+    if "localhost" in os.environ["OLLAMA_BASE_URL"] or "127.0.0.1" in os.environ["OLLAMA_BASE_URL"]:
+        st.warning("If running on Streamlit Cloud, localhost Ollama is unreachable. Switch provider to OpenAI.")
+
+ai_service = AIService()
+api_ready = provider == "ollama" or bool(os.getenv("OPENAI_API_KEY") or getattr(ai_service, "client", None))
 
 ai_service = AIService()
 api_ready = provider == "ollama" or bool(os.getenv("OPENAI_API_KEY") or getattr(ai_service, "client", None))
