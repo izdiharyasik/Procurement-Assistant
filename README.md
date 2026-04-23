@@ -50,6 +50,19 @@ If deploying on Streamlit Community Cloud, keep these files at repo root:
 
 This is required so non-Streamlit dependencies (like `pydantic`, `openai`, `python-docx`, `reportlab`) are installed before app startup, without pulling full backend server packages that can fail on cloud builders.
 
+
+### Streamlit Secrets (Cloud)
+
+In Streamlit Community Cloud, configure:
+
+```toml
+OPENAI_API_KEY = "sk-..."
+OPENAI_MODEL = "gpt-4.1-mini"
+MAX_CHUNK_CHARS = 3200
+```
+
+The app reads these from `st.secrets` and maps them to environment variables before initializing AI clients.
+
 ## Docker (Optional)
 
 The previous React + FastAPI docker-compose setup remains in this repo if needed.

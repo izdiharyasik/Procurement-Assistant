@@ -6,10 +6,19 @@ import tempfile
 from pathlib import Path
 
 import streamlit as st
+from tenacity import RetryError
 
 # Ensure backend package imports work when launching from repo root.
 sys.path.insert(0, str(Path(__file__).parent / "backend"))
 os.environ.setdefault("PYTHONPATH", "backend")
+
+# Streamlit Cloud stores API keys in st.secrets, not .env files.
+if "OPENAI_API_KEY" in st.secrets and st.secrets["OPENAI_API_KEY"]:
+    os.environ["OPENAI_API_KEY"] = st.secrets["OPENAI_API_KEY"]
+if "OPENAI_MODEL" in st.secrets and st.secrets["OPENAI_MODEL"]:
+    os.environ["OPENAI_MODEL"] = st.secrets["OPENAI_MODEL"]
+if "MAX_CHUNK_CHARS" in st.secrets and st.secrets["MAX_CHUNK_CHARS"]:
+    os.environ["MAX_CHUNK_CHARS"] = str(st.secrets["MAX_CHUNK_CHARS"])
 
 from app.models.schemas import ProcessingMode  # noqa: E402
 from app.services.ai_service import ai_service  # noqa: E402
@@ -25,8 +34,12 @@ st.set_page_config(page_title="Procurement AI Suite", page_icon="⚖️", layout
 st.title("🎯 Procurement AI Suite")
 st.caption("Bilingual legal translator + procurement document reviewer")
 
-if not ai_service.client:
-    st.warning("OPENAI_API_KEY is not configured. Set it in your environment before running.")
+api_key_present = bool(os.getenv("OPENAI_API_KEY") or getattr(ai_service, "client", None))
+if not api_key_present:
+    st.error(
+        "OPENAI_API_KEY is not configured. On Streamlit Cloud, set it in App Settings → Secrets."
+    )
+    st.code('OPENAI_API_KEY = "sk-..."', language="toml")
 
 mode_map = {
     "Translation Only": ProcessingMode.translation_only,
@@ -43,7 +56,7 @@ uploads = st.file_uploader(
     accept_multiple_files=True,
 )
 
-run = st.button("Start Processing", type="primary", disabled=not uploads)
+run = st.button("Start Processing", type="primary", disabled=not uploads or not api_key_present)
 
 if run and uploads:
     overall = st.progress(0, text="Preparing files...")
@@ -66,12 +79,22 @@ if run and uploads:
         if mode in (ProcessingMode.translation_only, ProcessingMode.combined):
             file_status.info("Translating document in chunks...")
             term_memory: dict[str, str] = {}
-            chunks = chunk_segments(segments, max_chars=3200)
-            for idx, chunk in enumerate(chunks, start=1):
-                chunk_translated = ai_service.translate_chunk(chunk, term_memory)
-                translations.update(chunk_translated)
-                progress = int((idx / len(chunks)) * 65)
-                file_progress.progress(progress)
+            chunks = chunk_segments(segments, max_chars=int(os.getenv("MAX_CHUNK_CHARS", "3200")))
+
+            try:
+                for idx, chunk in enumerate(chunks, start=1):
+                    chunk_translated = ai_service.translate_chunk(chunk, term_memory)
+                    translations.update(chunk_translated)
+                    progress = int((idx / len(chunks)) * 65)
+                    file_progress.progress(progress)
+            except RetryError:
+                file_status.error(
+                    "Translation failed after multiple retries. Check API key/quota/rate limits and try again."
+                )
+                continue
+            except Exception as exc:  # noqa: BLE001
+                file_status.error(f"Translation failed: {exc}")
+                continue
 
             bilingual_rows = [(seg.original, translations.get(seg.index, "")) for seg in segments]
             translated_text = "\n".join(t for _, t in bilingual_rows)
@@ -103,7 +126,17 @@ if run and uploads:
         if mode in (ProcessingMode.review_only, ProcessingMode.combined):
             file_status.info("Running procurement/legal risk review...")
             original_text = "\n".join(seg.original for seg in segments)
-            review_report = ai_service.review_document(original_text, translated_text)
+            try:
+                review_report = ai_service.review_document(original_text, translated_text)
+            except RetryError:
+                file_status.error(
+                    "Review failed after multiple retries. Check API key/quota/rate limits and try again."
+                )
+                continue
+            except Exception as exc:  # noqa: BLE001
+                file_status.error(f"Review failed: {exc}")
+                continue
+
             st.subheader("Review Report")
             st.markdown(review_report)
             st.download_button(
