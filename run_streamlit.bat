@@ -3,8 +3,22 @@ setlocal EnableExtensions EnableDelayedExpansion
 
 cd /d "%~dp0"
 
+set "PYTHON_CMD="
+where py >nul 2>nul && set "PYTHON_CMD=py -3"
+if not defined PYTHON_CMD (
+  where python >nul 2>nul && set "PYTHON_CMD=python"
+)
+
+if not defined PYTHON_CMD (
+  echo Python was not found on PATH.
+  echo Install Python 3.10+ from https://www.python.org/downloads/windows/
+  echo Then reopen Command Prompt and run this script again.
+  exit /b 1
+)
+
 if not exist ".venv\Scripts\python.exe" (
-  python -m venv .venv
+  %PYTHON_CMD% -m venv .venv
+  if errorlevel 1 goto :err
 )
 
 call ".venv\Scripts\activate.bat"

@@ -12,6 +12,8 @@ REM edit .env for OpenAI or Ollama
 run_streamlit.bat
 ```
 
+If you see `Python was not found`, install Python 3.10+ and reopen Command Prompt.
+
 ### macOS / Linux
 
 ```bash
@@ -34,8 +36,8 @@ Use one of these options:
 
 If you run locally on your own machine, Ollama works normally.
 
-1. Set provider to **OpenAI** and add your API key in the sidebar, or
-2. Configure Streamlit **Secrets** with `OPENAI_API_KEY`.
+On Streamlit Cloud, `OLLAMA_BASE_URL=http://localhost:11434` will **not** reach your local PC.
+Use one of these options:
 
 ## Important: `.env` vs terminal variable syntax
 
