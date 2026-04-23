@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_model: str = "gpt-4.1-mini"
     ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.1:8b"
+    ollama_model: str = "gemma3:latest"
     max_chunk_chars: int = 3200
     storage_path: str = "backend/storage"
 
