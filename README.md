@@ -37,6 +37,8 @@ Use one of these options:
 
 If you run locally on your own machine, Ollama works normally.
 
+Open: `http://localhost:8501`
+
 ---
 
 ## Important: `.env` vs terminal variable syntax
