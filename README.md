@@ -1,118 +1,106 @@
-# Procurement AI Suite (Streamlit Edition)
+# Procurement AI Suite (Simple Streamlit Mode)
 
-A production-oriented procurement/legal AI app with a simplified Streamlit interface.
+This repo now has one primary way to run the app locally: **Streamlit**.
 
-## What it does
+## Quick Start
 
-- Upload multiple `.docx` legal/procurement files
-- Choose mode:
-  - `Translation Only`
-  - `Review Only`
-  - `Translate + Review`
-- Generate bilingual outputs (`.docx` + `.pdf`) in two-column layout
-- Generate structured procurement/legal review report (`.md`)
-- Download all generated outputs directly from the UI
+### Windows (Command Prompt)
 
-## AI Provider Options
+```bat
+copy .env.example .env
+REM edit .env for OpenAI or Ollama
+run_streamlit.bat
+```
 
-You can run this app in two ways:
+If you see `Python was not found`, install Python 3.10+ and reopen Command Prompt.
 
-1. **OpenAI (paid API)**
-2. **Ollama (local, no API key cost)**
-
-Set this with `AI_PROVIDER` in `.env` or Streamlit secrets.
-
-## 1-Minute Quick Start (OpenAI)
+### macOS / Linux
 
 ```bash
 cp .env.example .env
-# edit .env and set AI_PROVIDER=openai + OPENAI_API_KEY
+# edit .env for OpenAI or Ollama
 ./run_streamlit.sh
 ```
 
-Then open `http://localhost:8501`.
+Open: `http://localhost:8501`
+If that URL fails, try `http://127.0.0.1:8501`
 
-## 1-Minute Quick Start (No OpenAI key, using Ollama)
+---
+
+## Streamlit Community Cloud note
+
+On Streamlit Cloud, `OLLAMA_BASE_URL=http://localhost:11434` will **not** reach your local PC.
+Use one of these options:
+
+1. Set provider to **OpenAI** and add your API key in the sidebar, or
+2. Configure Streamlit **Secrets** with `OPENAI_API_KEY`.
+
+If you run locally on your own machine, Ollama works normally.
+
+---
+
+## Important: `.env` vs terminal variable syntax
+
+In **Windows Command Prompt**, this is invalid and will fail:
+
+```bat
+AI_PROVIDER=ollama
+```
+
+Use either:
+
+```bat
+set AI_PROVIDER=ollama
+set OLLAMA_BASE_URL=http://localhost:11434
+set OLLAMA_MODEL=gemma3:latest
+```
+
+Or (recommended) just put these in `.env` and run `run_streamlit.bat`.
+
+---
+
+## If `localhost:8501` says "refused to connect"
+
+1. Keep the `run_streamlit.bat` window open (do not close it).
+2. Run `run_streamlit.bat` again and check for Python/pip errors in that same window.
+3. Open `http://127.0.0.1:8501` instead of `http://localhost:8501`.
+4. If you use VPN/proxy, temporarily disable it or add localhost bypass.
+5. Allow Python in Windows Firewall when prompted.
+
+---
+
+## Environment setup
+
+Use one provider in `.env`:
+
+### Option A: OpenAI
+
+```env
+AI_PROVIDER=openai
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4.1-mini
+```
+
+### Option B: Ollama (local, use what you already installed)
+
+```env
+AI_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=gemma3:latest
+```
+
+No new model download is required. Use any local model from:
 
 ```bash
-# install ollama first: https://ollama.com/download
-ollama pull llama3.1:8b
-cp .env.example .env
-# edit .env:
-# AI_PROVIDER=ollama
-# OLLAMA_BASE_URL=http://localhost:11434
-# OLLAMA_MODEL=llama3.1:8b
-./run_streamlit.sh
+ollama list
 ```
+
+Examples from existing installs:
+- `gemma3:latest`
+- `phi:latest`
 
 ---
 
-## Manual Local Run
+## Legacy full-stack mode (optional)
 
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r backend/requirements.txt
-cp .env.example .env
-# set AI_PROVIDER and relevant keys/urls
-set -a; source .env; set +a
-streamlit run streamlit_app.py
-```
-
----
-
-## Streamlit Community Cloud Deployment
-
-If deploying on Streamlit Community Cloud, keep these files at repo root:
-
-- `streamlit_app.py`
-- `requirements.txt` (Streamlit-specific dependencies only)
-- `runtime.txt` (pins Python version)
-
-### Streamlit Secrets (Cloud)
-
-OpenAI mode:
-
-```toml
-AI_PROVIDER = "openai"
-OPENAI_API_KEY = "sk-..."
-OPENAI_MODEL = "gpt-4.1-mini"
-MAX_CHUNK_CHARS = 3200
-```
-
-Ollama mode (only works if Ollama endpoint is reachable from deployment environment):
-
-```toml
-AI_PROVIDER = "ollama"
-OLLAMA_BASE_URL = "http://localhost:11434"
-OLLAMA_MODEL = "llama3.1:8b"
-MAX_CHUNK_CHARS = 3200
-```
-
-## Docker (Optional)
-
-The previous React + FastAPI docker-compose setup remains in this repo if needed.
-
-```bash
-cp .env.example .env
-docker compose up --build
-```
-
-- FastAPI: `http://localhost:8000`
-- React UI: `http://localhost:5173`
-
----
-
-## Reliability / Anti-throttle controls
-
-- Chunked translation for long docs
-- Exponential backoff retries for AI calls
-- Low temperature for legal consistency
-- Term memory dictionary carried across chunks
-
----
-
-## Notes
-
-- Best for legal/procurement `.docx` documents with clauses, numbering, and tables.
-- For completely free/local inference, use `AI_PROVIDER=ollama`.
+The old React + FastAPI stack still exists (`frontend/`, `backend/`, `docker-compose.yml`) but is no longer required for the default workflow.
