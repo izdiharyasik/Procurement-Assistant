@@ -28,6 +28,12 @@ python -m pip install --upgrade pip
 if errorlevel 1 goto :err
 python -m pip install -r requirements.txt
 if errorlevel 1 goto :err
+python -c "import streamlit" >nul 2>nul
+if errorlevel 1 (
+  echo Streamlit is not importable in this environment.
+  echo Re-run this script and check pip/network output above.
+  goto :err
+)
 
 if not exist ".env" (
   copy ".env.example" ".env" >nul
@@ -40,7 +46,14 @@ for /f "usebackq tokens=1,* delims==" %%A in (".env") do (
   if not "!k!"=="" if /I not "!k:~0,1!"=="#" set "!k!=!v!"
 )
 
-streamlit run streamlit_app.py
+echo.
+echo Starting Streamlit...
+echo If your browser shows ERR_CONNECTION_REFUSED, keep this window open and read errors here.
+echo Local URL: http://localhost:8501
+echo Backup URL: http://127.0.0.1:8501
+echo.
+
+python -m streamlit run streamlit_app.py --server.address 127.0.0.1 --server.port 8501
 exit /b %errorlevel%
 
 :err

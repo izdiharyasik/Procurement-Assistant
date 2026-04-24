@@ -23,6 +23,7 @@ cp .env.example .env
 ```
 
 Open: `http://localhost:8501`
+If that URL fails, try `http://127.0.0.1:8501`
 
 ---
 
@@ -36,8 +37,9 @@ Use one of these options:
 
 If you run locally on your own machine, Ollama works normally.
 
-On Streamlit Cloud, `OLLAMA_BASE_URL=http://localhost:11434` will **not** reach your local PC.
-Use one of these options:
+Open: `http://localhost:8501`
+
+---
 
 ## Important: `.env` vs terminal variable syntax
 
@@ -56,6 +58,16 @@ set OLLAMA_MODEL=gemma3:latest
 ```
 
 Or (recommended) just put these in `.env` and run `run_streamlit.bat`.
+
+---
+
+## If `localhost:8501` says "refused to connect"
+
+1. Keep the `run_streamlit.bat` window open (do not close it).
+2. Run `run_streamlit.bat` again and check for Python/pip errors in that same window.
+3. Open `http://127.0.0.1:8501` instead of `http://localhost:8501`.
+4. If you use VPN/proxy, temporarily disable it or add localhost bypass.
+5. Allow Python in Windows Firewall when prompted.
 
 ---
 
